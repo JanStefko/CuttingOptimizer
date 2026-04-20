@@ -15,6 +15,9 @@ namespace CuttingOptimizer.Models.DTOs
         public double TrimMargin { get; set; }
 
         [Required]
-        public List<PanelImportRow> Panels { get; set; } = [];
+        public List<EdgeCodeMappingDto> EdgeCodes { get; set; } = [];
+
+        [Required]
+        public List<PanelInputDto> Panels { get; set; } = [];
     }
 }

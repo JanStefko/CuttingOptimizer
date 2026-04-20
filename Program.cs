@@ -1,4 +1,8 @@
 using CuttingOptimizer.Data;
+using CuttingOptimizer.Repositories;
+using CuttingOptimizer.Repositories.Interfaces;
+using CuttingOptimizer.Services;
+using CuttingOptimizer.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +10,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Services.AddScoped<ISheetMaterialRepository, SheetMaterialRepository>();
+builder.Services.AddScoped<IEdgeBandingRepository, EdgeBandingRepository>();
+
+builder.Services.AddScoped<ISheetMaterialService, SheetMaterialService>();
+builder.Services.AddScoped<IEdgeBandingService, EdgeBandingService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

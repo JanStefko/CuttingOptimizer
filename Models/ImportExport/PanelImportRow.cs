@@ -22,9 +22,16 @@ namespace CuttingOptimizer.Models.ImportExport
 
         public string? Note { get; set; }
 
-        public string? FrontEdgeName { get; set; }
-        public string? BackEdgeName { get; set; }
-        public string? LeftEdgeName { get; set; }
-        public string? RightEdgeName { get; set; }
+        [Range(0, int.MaxValue)]
+        public int FrontEdgeCode { get; set; } = 0;
+
+        [Range(0, int.MaxValue)]
+        public int BackEdgeCode { get; set; } = 0;
+
+        [Range(0, int.MaxValue)]
+        public int LeftEdgeCode { get; set; } = 0;
+
+        [Range(0, int.MaxValue)]
+        public int RightEdgeCode { get; set; } = 0;
     }
 }

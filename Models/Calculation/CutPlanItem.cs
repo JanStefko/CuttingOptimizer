@@ -11,14 +11,17 @@
         public double X { get; set; }
         public double Y { get; set; }
 
-        public double Length { get; set; }
-        public double Width { get; set; }
+        public double FinalLength { get; set; }
+        public double FinalWidth { get; set; }
+
+        public double CutLength { get; set; }
+        public double CutWidth { get; set; }
 
         public bool IsRotated { get; set; }
 
-        public int? FrontEdgeId { get; set; }
-        public int? BackEdgeId { get; set; }
-        public int? LeftEdgeId { get; set; }
-        public int? RightEdgeId { get; set; }
+        public int FrontEdgeCode { get; set; }
+        public int BackEdgeCode { get; set; }
+        public int LeftEdgeCode { get; set; }
+        public int RightEdgeCode { get; set; }
     }
 }

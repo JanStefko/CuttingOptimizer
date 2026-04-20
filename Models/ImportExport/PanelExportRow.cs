@@ -1,5 +1,7 @@
 ﻿namespace CuttingOptimizer.Models.ImportExport
 {
+    //expoert for external systems - saws, cutting centers
+    
     public class PanelExportRow
     {
         public int SheetNumber { get; set; }
