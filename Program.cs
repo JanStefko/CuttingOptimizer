@@ -15,6 +15,7 @@ builder.Services.AddScoped<ISheetMaterialRepository, SheetMaterialRepository>();
 builder.Services.AddScoped<IEdgeBandingRepository, EdgeBandingRepository>();
 
 builder.Services.AddScoped<ISheetMaterialService, SheetMaterialService>();
+builder.Services.AddScoped<IOptimizeService, OptimizeService>();
 builder.Services.AddScoped<IEdgeBandingService, EdgeBandingService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
