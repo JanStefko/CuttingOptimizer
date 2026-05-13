@@ -2,6 +2,7 @@ using CuttingOptimizer.Data;
 using CuttingOptimizer.Repositories;
 using CuttingOptimizer.Repositories.Interfaces;
 using CuttingOptimizer.Services;
+using CuttingOptimizer.Services.Cutting;
 using CuttingOptimizer.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +29,7 @@ builder.Services.AddScoped<IEdgeBandingRepository, EdgeBandingRepository>();
 builder.Services.AddScoped<ISheetMaterialService, SheetMaterialService>();
 builder.Services.AddScoped<IOptimizeService, OptimizeService>();
 builder.Services.AddScoped<IEdgeBandingService, EdgeBandingService>();
+builder.Services.AddScoped<ICuttingAlgorithm, FirstFitCuttingAlgorithm>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
