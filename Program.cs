@@ -30,6 +30,7 @@ builder.Services.AddScoped<ISheetMaterialService, SheetMaterialService>();
 builder.Services.AddScoped<IOptimizeService, OptimizeService>();
 builder.Services.AddScoped<IEdgeBandingService, EdgeBandingService>();
 builder.Services.AddScoped<ICuttingAlgorithm, FirstFitCuttingAlgorithm>();
+builder.Services.AddScoped<ICuttingAlgorithm, MaxRectsBssfCuttingAlgorithm>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

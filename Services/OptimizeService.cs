@@ -3,6 +3,7 @@ using CuttingOptimizer.Models.DTOs;
 using CuttingOptimizer.Models.Entities;
 using CuttingOptimizer.Models.Optimization;
 using CuttingOptimizer.Repositories.Interfaces;
+using CuttingOptimizer.Services.Cutting;
 using CuttingOptimizer.Services.Interfaces;
 
 namespace CuttingOptimizer.Services;
@@ -10,10 +11,14 @@ namespace CuttingOptimizer.Services;
 public class OptimizeService : IOptimizeService
 {
     private readonly ISheetMaterialRepository _sheetMaterialRepository;
+    private readonly ICuttingAlgorithm _cuttingAlgorithm;
 
-    public OptimizeService(ISheetMaterialRepository sheetMaterialRepository)
+    public OptimizeService(
+        ISheetMaterialRepository sheetMaterialRepository,
+        ICuttingAlgorithm cuttingAlgorithm)
     {
         _sheetMaterialRepository = sheetMaterialRepository;
+        _cuttingAlgorithm = cuttingAlgorithm;
     }
 
     public async Task<OptimizeCutPlanResponse> OptimizeAsync(OptimizeCutPlanRequest request)
@@ -23,7 +28,9 @@ public class OptimizeService : IOptimizeService
         var sheetMaterial = await GetSheetMaterialAsync(request.SheetMaterialId);
         var edgeMappings = BuildEdgeMappings(request);
         var panels = ExpandAndPreparePanels(request, edgeMappings, sheetMaterial);
-        var result = PackPanels(sheetMaterial, request.Kerf, request.TrimMargin, panels);
+
+        var (usableLength, usableWidth) = GetUsableSheetDimensions(sheetMaterial, request.TrimMargin);
+        var result = _cuttingAlgorithm.Cut(usableLength, usableWidth, request.Kerf, panels);
 
         return BuildResponse(sheetMaterial, result, request.Kerf, request.TrimMargin, panels.Count);
     }
@@ -77,11 +84,9 @@ public class OptimizeService : IOptimizeService
             .ToList();
     }
 
-    private static OptimizationResult PackPanels(
+    private static (double UsableLength, double UsableWidth) GetUsableSheetDimensions(
         SheetMaterial sheetMaterial,
-        double kerf,
-        double trimMargin,
-        List<OptimizationPanel> panels)
+        double trimMargin)
     {
         var usableLength = sheetMaterial.Length - (2 * trimMargin);
         var usableWidth = sheetMaterial.Width - (2 * trimMargin);
@@ -89,130 +94,7 @@ public class OptimizeService : IOptimizeService
         if (usableLength <= 0 || usableWidth <= 0)
             throw new InvalidOperationException("Trim margin is too large for selected sheet material.");
 
-        var result = new OptimizationResult();
-
-        foreach (var panel in panels)
-        {
-            var placed = false;
-
-            foreach (var sheet in result.Sheets)
-            {
-                if (TryPlacePanelOnSheet(sheet, panel, kerf))
-                {
-                    placed = true;
-                    break;
-                }
-            }
-
-            if (placed)
-                continue;
-
-            var newSheet = CreateEmptySheet(result.Sheets.Count + 1, usableLength, usableWidth);
-
-            if (TryPlacePanelOnSheet(newSheet, panel, kerf))
-            {
-                result.Sheets.Add(newSheet);
-            }
-            else
-            {
-                result.UnplacedPanels.Add(panel);
-            }
-        }
-
-        return result;
-    }
-
-    private static OptimizationSheet CreateEmptySheet(int sheetNumber, double usableLength, double usableWidth)
-    {
-        return new OptimizationSheet
-        {
-            SheetNumber = sheetNumber,
-            UsableLength = usableLength,
-            UsableWidth = usableWidth,
-            FreeRectangles =
-            [
-                new FreeRectangle
-                {
-                    X = 0,
-                    Y = 0,
-                    Length = usableLength,
-                    Width = usableWidth
-                }
-            ]
-        };
-    }
-
-    private static bool TryPlacePanelOnSheet(OptimizationSheet sheet, OptimizationPanel panel, double kerf)
-    {
-        for (var i = 0; i < sheet.FreeRectangles.Count; i++)
-        {
-            var freeRect = sheet.FreeRectangles[i];
-
-            if (freeRect.CanFit(panel.CutLength, panel.CutWidth))
-            {
-                PlacePanel(sheet, i, panel, panel.CutLength, panel.CutWidth, false, kerf);
-                return true;
-            }
-
-            if (panel.CanRotate && freeRect.CanFit(panel.CutWidth, panel.CutLength))
-            {
-                PlacePanel(sheet, i, panel, panel.CutWidth, panel.CutLength, true, kerf);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static void PlacePanel(
-        OptimizationSheet sheet,
-        int freeRectIndex,
-        OptimizationPanel panel,
-        double placedLength,
-        double placedWidth,
-        bool isRotated,
-        double kerf)
-    {
-        var freeRect = sheet.FreeRectangles[freeRectIndex];
-
-        sheet.Placements.Add(new PanelPlacement
-        {
-            SheetNumber = sheet.SheetNumber,
-            PanelIndex = panel.Index,
-            X = freeRect.X,
-            Y = freeRect.Y,
-            Length = placedLength,
-            Width = placedWidth,
-            IsRotated = isRotated,
-            Panel = panel
-        });
-
-        sheet.FreeRectangles.RemoveAt(freeRectIndex);
-
-        var rightLength = freeRect.Length - placedLength - kerf;
-        var bottomWidth = freeRect.Width - placedWidth - kerf;
-
-        if (rightLength > 0)
-        {
-            sheet.FreeRectangles.Add(new FreeRectangle
-            {
-                X = freeRect.X + placedLength + kerf,
-                Y = freeRect.Y,
-                Length = rightLength,
-                Width = placedWidth
-            });
-        }
-
-        if (bottomWidth > 0)
-        {
-            sheet.FreeRectangles.Add(new FreeRectangle
-            {
-                X = freeRect.X,
-                Y = freeRect.Y + placedWidth + kerf,
-                Length = freeRect.Length,
-                Width = bottomWidth
-            });
-        }
+        return (usableLength, usableWidth);
     }
 
     private static OptimizeCutPlanResponse BuildResponse(
